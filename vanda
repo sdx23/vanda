@@ -91,7 +91,21 @@ cmd_clean() {
 }
 
 cmd_help() {
-	echo "TODO: be helpful"
+	cat <<-"ENDHELP"
+	usage: vanda [-hv] [cmd [args]]
+
+	options:
+	-h              print this help
+	-v              be verbose
+
+	commands:
+	run             run vanda for the current git commit
+	clean           remove up stale resource links
+	remove          remove the given resource and its link
+
+	help            print this help
+	version         print the version information
+	ENDHELP
 }
 
 cmd_version() {
