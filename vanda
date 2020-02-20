@@ -32,6 +32,18 @@ fi
 
 #----------------------- helpers
 
+askN() {
+	read -r -p"$1 [y|N] " response < /dev/stdin
+	if [ "$response" == "y" ] || [ "$response" == "Y" ]; then
+		return 1
+	fi
+	return 0
+}
+
+warn() {
+	echo "$1"
+}
+
 verbose() {
 	[ "$verbose" -ge 1 ] && echo "$1"
 }
@@ -48,6 +60,11 @@ cmd_run() {
  	    error "git is not clean. Aborting."
    		exit 1
  	fi
+
+	if [ "$(git rev-list HEAD...origin/master --count)" -ge 1 ]; then
+		warn "git possibly not sufficiently up to date. Did you push?"
+		askN "Do you want to continue?" && exit 1
+	fi
 
 	# extract git remote
 	git_remote="$(git config --get remote.origin.url)"
