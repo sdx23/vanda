@@ -1,0 +1,67 @@
+#!/bin/bash
+
+#-------------------- configuration
+
+rc_file="$HOME/.vandarc"
+
+# set here
+vjobdir="vanda"
+vandaversion="0.01"
+
+#-------------------- cli arguments
+
+#-------------------- config file
+
+function create_rc_file {
+	cat	<<-ENDRC > "$rc_file"
+		vhost="vanda_compute_node"
+		vmountpoint="vanda_local_mountpoint"
+	ENDRC
+}
+
+if [ -f "$rc_file" ]; then
+	# shellcheck source=.vandarc
+	source "$rc_file"
+else
+	echo "No vandarc found. Creating."
+	create_rc_file
+fi
+
+
+#-------------------- main
+
+# extract git remote
+git_remote="$(git config --get remote.origin.url)"
+git_hash_full="$(sha512sum <<< "$git_remote" )"
+git_hash="${git_hash_full::6}"
+
+wdirdate="$(date '+%Y%m%d_%H%M%S')"
+wdir="${git_hash}_$wdirdate"
+
+# ssh to job node
+# shellcheck disable=SC2087
+ssh -T "$vhost" <<-ENDSSH
+	set -x
+	if [ ! -d "$vjobdir" ]; then
+		echo "vanda job dir '$vjobdir' not found. Aborting."
+		exit 1
+	fi
+	cd "$vjobdir"
+	mkdir "$wdir"
+	cd "$wdir"
+	git clone "$git_remote" .
+	cat <<-ENDVLOG > vanda.log
+		date \$(date)
+		isodate \$(date '+%Y-%m-%dT%h%m%s')
+		git_ref \$(git rev-parse --verify HEAD)
+		git_log \$(git log -1 --pretty=oneline)
+		vanda_version $vandaversion
+	ENDVLOG
+	./vanda_job.sh
+ENDSSH
+
+# link results here
+linkdest="vj$wdirdate"
+ln -s "$vmountpoint/$vjobdir/$wdir" "$linkdest"
+echo "Results will be found in '$linkdest'."
+
