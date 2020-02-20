@@ -129,19 +129,20 @@ cmd_check() {
 }
 
 cmd_remove() {
-	dirlink="$1"
-	if [ -L "$dirlink" ] && [ -e "$dirlink" ]; then
-		dest="$(readlink "$dirlink")"
-		if [ -d "$dest" ]; then
-			verbose "Removing the resource '$dirlink'."
-			rm -r -- "$dest"
-			rm -- "$dirlink"
+	for dirlink in "$@" ; do
+		if [ -L "$dirlink" ] && [ -e "$dirlink" ]; then
+			dest="$(readlink "$dirlink")"
+			if [ -d "$dest" ]; then
+				verbose "Removing the resource '$dirlink'."
+				rm -r -- "$dest"
+				rm -- "$dirlink"
+			else
+				error "Failed to remove the resource '$dirlink'."
+			fi
 		else
-			error "Failed to remove the resource '$dirlink'."
+			error "No valid resource '$dirlink'."
 		fi
-	else
-		error "No valid resource '$dirlink'."
-	fi
+	done
 }
 
 #----------------------- main
