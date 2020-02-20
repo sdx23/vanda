@@ -16,7 +16,7 @@ verbose=0
 #----------------------- config file
 
 function create_rc_file {
-	cat	<<-ENDRC > "$rc_file"
+	cat <<-ENDRC > "$rc_file"
 		vhost="vanda_compute_node"
 		vmountpoint="vanda_local_mountpoint"
 	ENDRC
@@ -57,9 +57,9 @@ error() {
 cmd_run() {
 	# check git clean
 	if [ -n "$(git status --untracked-files=no --porcelain)" ]; then
- 	    error "git is not clean. Aborting."
-   		exit 1
- 	fi
+		error "git is not clean. Aborting."
+		exit 1
+	fi
 
 	if [ "$(git rev-list HEAD...origin/master --count)" -ge 1 ]; then
 		warn "git possibly not sufficiently up to date. Did you push?"
@@ -102,7 +102,7 @@ cmd_run() {
 		ENDVLOG
 		#tmux new-session -d bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e'
 		screen -dmS vanda_job_$wdir -- bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e ; \
- 		  echo -e "date_end \$(date)\nisodate_end \$(date '+%Y-%m-%dT%h%m%s')" >>vanda_job.log'
+		  echo -e "date_end \$(date)\nisodate_end \$(date '+%Y-%m-%dT%h%m%s')" >>vanda_job.log'
 	ENDSSH
 
 	# link results here
@@ -113,7 +113,7 @@ cmd_run() {
 
 cmd_clean() {
 	for dirlink in vj20*; do
-	   	if [ -L "$dirlink" ] && ! [ -e "$dirlink" ]; then
+		if [ -L "$dirlink" ] && ! [ -e "$dirlink" ]; then
 			rm -- "$dirlink"
 			verbose "Removing '$dirlink'."
 		fi
@@ -172,23 +172,23 @@ cmd_remove() {
 
 optspec=":hv:"
 while getopts "$optspec" optchar; do
-    case "${optchar}" in
-        h)
-            cmd_help
+	case "${optchar}" in
+		h)
+			cmd_help
 			exit 0
-            ;;
-        v)
-            verbose=1
+			;;
+		v)
+			verbose=1
 			shift
-            ;;
-        *)
-            if [ "$OPTERR" != 1 ] || [ "${optspec:0:1}" = ":" ]; then
-                error "Unknown option '-${OPTARG}'"
+			;;
+		*)
+			if [ "$OPTERR" != 1 ] || [ "${optspec:0:1}" = ":" ]; then
+				error "Unknown option '-${OPTARG}'"
 				cmd_help
 				exit 0
-            fi
-            ;;
-    esac
+			fi
+			;;
+	esac
 done
 
 if declare -f "cmd_$1" >/dev/null; then
