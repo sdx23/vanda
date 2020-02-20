@@ -88,6 +88,10 @@ cmd_help() {
 	echo "TODO: be helpful"
 }
 
+cmd_version() {
+	echo "vanda $vandaversion"
+}
+
 cmd_check() {
 	# TODO
 	# ssh works?
