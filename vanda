@@ -6,8 +6,10 @@ rc_file="$HOME/.vandarc"
 
 # set here
 vjobdir="vanda"
-vandaversion="0.02"
-verbose=1
+vandaversion="0.03"
+
+# options
+verbose=0
 
 #----------------------- cli arguments
 
@@ -36,7 +38,6 @@ verbose() {
 
 error() {
 	echo "$1"
-	exit 1
 }
 
 #----------------------- commands
@@ -123,6 +124,27 @@ cmd_remove() {
 }
 
 #----------------------- main
+
+optspec=":hv:"
+while getopts "$optspec" optchar; do
+    case "${optchar}" in
+        h)
+            cmd_help
+			exit 0
+            ;;
+        v)
+            verbose=1
+			shift
+            ;;
+        *)
+            if [ "$OPTERR" != 1 ] || [ "${optspec:0:1}" = ":" ]; then
+                error "Unknown option '-${OPTARG}'"
+				cmd_help
+				exit 0
+            fi
+            ;;
+    esac
+done
 
 if declare -f "cmd_$1" >/dev/null; then
 	func="cmd_$1"
