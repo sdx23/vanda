@@ -6,7 +6,7 @@ rc_file="$HOME/.vandarc"
 
 # set here
 vjobdir="vanda"
-vandaversion="0.03"
+vandaversion="0.04"
 
 # options
 verbose=0
@@ -70,9 +70,14 @@ cmd_run() {
 	git_remote="$(git config --get remote.origin.url)"
 	git_hash_full="$(sha512sum <<< "$git_remote" )"
 	git_hash="${git_hash_full::6}"
+	git_toplevel="$(git rev-parse --show-toplevel)"
+
+	wrelpath="${PWD#$git_toplevel}"
 
 	wdirdate="$(date '+%Y%m%d_%H%M%S')"
 	wdir="${git_hash}_$wdirdate"
+
+	linkdest="vj$wdirdate"
 
 	# ssh to job node
 	# shellcheck disable=SC2087
@@ -83,14 +88,16 @@ cmd_run() {
 			exit 1
 		fi
 		cd "$vjobdir"
-		mkdir "$wdir"
-		cd "$wdir"
-		git clone "$git_remote" .
+		git clone "$git_remote" "$wdir"
+		ln -s "${wrelpath#/}" "${wdir}/vanda_pwd"
+		cd "$wdir$wrelpath"
 		cat <<-ENDVLOG > vanda_job.log
 			date \$(date)
 			isodate \$(date '+%Y-%m-%dT%h%m%s')
 			git_ref \$(git rev-parse --verify HEAD)
 			git_log \$(git log -1 --pretty=oneline)
+			vanda_relpath $wrelpath
+			vanda_linkdest $linkdest
 			vanda_version $vandaversion
 		ENDVLOG
 		#tmux new-session -d bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e'
@@ -99,8 +106,7 @@ cmd_run() {
 	ENDSSH
 
 	# link results here
-	linkdest="vj$wdirdate"
-	ln -s "$vmountpoint/$vjobdir/$wdir" "$linkdest"
+	ln -s "$vmountpoint/$vjobdir/$wdir$wrelpath" "$linkdest"
 	echo "Results will be found in '$linkdest'."
 
 }
