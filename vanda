@@ -71,7 +71,8 @@ cmd_run() {
 			vanda_version $vandaversion
 		ENDVLOG
 		#tmux new-session -d bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e'
-		screen -dmS vanda_job_$wdir -- bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e'
+		screen -dmS vanda_job_$wdir -- bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e ; \
+ 		  echo -e "date_end \$(date)\nisodate_end \$(date '+%Y-%m-%dT%h%m%s')" >>vanda_job.log'
 	ENDSSH
 
 	# link results here
