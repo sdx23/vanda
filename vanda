@@ -43,6 +43,12 @@ error() {
 #----------------------- commands
 
 cmd_run() {
+	# check git clean
+	if [ -n "$(git status --untracked-files=no --porcelain)" ]; then
+ 	    error "git is not clean. Aborting."
+   		exit 1
+ 	fi
+
 	# extract git remote
 	git_remote="$(git config --get remote.origin.url)"
 	git_hash_full="$(sha512sum <<< "$git_remote" )"
