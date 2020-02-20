@@ -34,6 +34,11 @@ verbose() {
 	[ "$verbose" -ge 1 ] && echo "$1"
 }
 
+error() {
+	echo "$1"
+	exit 1
+}
+
 #----------------------- commands
 
 cmd_run() {
@@ -99,6 +104,22 @@ cmd_check() {
 	# tmux?
 	# screen?
 	true;
+}
+
+cmd_remove() {
+	dirlink="$1"
+	if [ -L "$dirlink" ] && [ -e "$dirlink" ]; then
+		dest="$(readlink "$dirlink")"
+		if [ -d "$dest" ]; then
+			verbose "Removing the resource '$dirlink'."
+			rm -r -- "$dest"
+			rm -- "$dirlink"
+		else
+			error "Failed to remove the resource '$dirlink'."
+		fi
+	else
+		error "No valid resource '$dirlink'."
+	fi
 }
 
 #----------------------- main
