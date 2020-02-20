@@ -1,16 +1,17 @@
 #!/bin/bash
 
-#-------------------- configuration
+#----------------------- configuration
 
 rc_file="$HOME/.vandarc"
 
 # set here
 vjobdir="vanda"
-vandaversion="0.01"
+vandaversion="0.02"
+verbose=1
 
-#-------------------- cli arguments
+#----------------------- cli arguments
 
-#-------------------- config file
+#----------------------- config file
 
 function create_rc_file {
 	cat	<<-ENDRC > "$rc_file"
@@ -27,41 +28,85 @@ else
 	create_rc_file
 fi
 
+#----------------------- helpers
 
-#-------------------- main
+verbose() {
+	[ "$verbose" -ge 1 ] && echo "$1"
+}
 
-# extract git remote
-git_remote="$(git config --get remote.origin.url)"
-git_hash_full="$(sha512sum <<< "$git_remote" )"
-git_hash="${git_hash_full::6}"
+#----------------------- commands
 
-wdirdate="$(date '+%Y%m%d_%H%M%S')"
-wdir="${git_hash}_$wdirdate"
+cmd_run() {
+	# extract git remote
+	git_remote="$(git config --get remote.origin.url)"
+	git_hash_full="$(sha512sum <<< "$git_remote" )"
+	git_hash="${git_hash_full::6}"
 
-# ssh to job node
-# shellcheck disable=SC2087
-ssh -T "$vhost" <<-ENDSSH
-	set -x
-	if [ ! -d "$vjobdir" ]; then
-		echo "vanda job dir '$vjobdir' not found. Aborting."
-		exit 1
-	fi
-	cd "$vjobdir"
-	mkdir "$wdir"
-	cd "$wdir"
-	git clone "$git_remote" .
-	cat <<-ENDVLOG > vanda.log
-		date \$(date)
-		isodate \$(date '+%Y-%m-%dT%h%m%s')
-		git_ref \$(git rev-parse --verify HEAD)
-		git_log \$(git log -1 --pretty=oneline)
-		vanda_version $vandaversion
-	ENDVLOG
-	./vanda_job.sh
-ENDSSH
+	wdirdate="$(date '+%Y%m%d_%H%M%S')"
+	wdir="${git_hash}_$wdirdate"
 
-# link results here
-linkdest="vj$wdirdate"
-ln -s "$vmountpoint/$vjobdir/$wdir" "$linkdest"
-echo "Results will be found in '$linkdest'."
+	# ssh to job node
+	# shellcheck disable=SC2087
+	ssh -T "$vhost" <<-ENDSSH
+		set -x
+		if [ ! -d "$vjobdir" ]; then
+			echo "vanda job dir '$vjobdir' not found. Aborting." >&2
+			exit 1
+		fi
+		cd "$vjobdir"
+		mkdir "$wdir"
+		cd "$wdir"
+		git clone "$git_remote" .
+		cat <<-ENDVLOG > vanda_job.log
+			date \$(date)
+			isodate \$(date '+%Y-%m-%dT%h%m%s')
+			git_ref \$(git rev-parse --verify HEAD)
+			git_log \$(git log -1 --pretty=oneline)
+			vanda_version $vandaversion
+		ENDVLOG
+		#tmux new-session -d bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e'
+		screen -dmS vanda_job_$wdir -- bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e'
+	ENDSSH
 
+	# link results here
+	linkdest="vj$wdirdate"
+	ln -s "$vmountpoint/$vjobdir/$wdir" "$linkdest"
+	echo "Results will be found in '$linkdest'."
+
+}
+
+cmd_clean() {
+	for dirlink in vj20*; do
+	   	if [ -L "$dirlink" ] && ! [ -e "$dirlink" ]; then
+			rm -- "$dirlink"
+			verbose "Removing '$dirlink'."
+		fi
+	done
+}
+
+cmd_help() {
+	echo "TODO: be helpful"
+}
+
+cmd_check() {
+	# TODO
+	# ssh works?
+	# git?
+	# tmux?
+	# screen?
+	true;
+}
+
+#----------------------- main
+
+if declare -f "cmd_$1" >/dev/null; then
+	func="cmd_$1"
+	shift
+	"$func" "$@"
+elif [ -z "$1" ]; then
+	echo "No command given. Assuming 'run'."
+	cmd_run
+else
+	echo "Unknown command '$1'." >&2
+	cmd_help
+fi
