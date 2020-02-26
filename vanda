@@ -109,6 +109,17 @@ cmd_run() {
 	ln -s "$vmountpoint/$vjobdir/$wdir$wrelpath" "$linkdest"
 	echo "Results will be found in '$linkdest'."
 
+	echo "R $(date '+%Y-%m-%dT%h%m%s') vanda_job_$wdir $vhost" >> .vandajobs
+}
+
+cmd_attach() {
+	jobdata_str=$(tail -n1 .vandajobs)
+	IFS=' ' read -r -a jobdata <<< "$jobdata_str"
+	vhost=${jobdata[3]}
+	vsession=${jobdata[2]}
+
+	# shellcheck disable=SC2029
+	ssh "$vhost" -t -- screen -rx "$vsession"
 }
 
 cmd_clean() {
@@ -130,6 +141,7 @@ cmd_help() {
 
 	commands:
 	  run             run vanda for the current git commit
+      attach          attach to recent job session
 	  clean           remove stale resource links
 	  remove          remove the given resource and its link
 	  gitignore       append vanda specifics to .gitignore
@@ -170,7 +182,7 @@ cmd_remove() {
 }
 
 cmd_gitignore() {
-	echo -e "vj20*\n" >> .gitignore
+	echo -e ".vandajobs\nvj20*\n" >> .gitignore
 }
 
 #----------------------- main
