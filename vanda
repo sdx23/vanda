@@ -71,6 +71,7 @@ cmd_run() {
 	git_hash_full="$(sha512sum <<< "$git_remote" )"
 	git_hash="${git_hash_full::6}"
 	git_toplevel="$(git rev-parse --show-toplevel)"
+	git_commit="$(git log -1 --pretty=%H)"
 
 	wrelpath="${PWD#$git_toplevel}"
 
@@ -90,20 +91,22 @@ cmd_run() {
 		cd "$vjobdir"
 		git clone "$git_remote" "$wdir"
 		ln -s "${wrelpath#/}" "${wdir}/vanda_pwd"
-		cd "$wdir$wrelpath"
+		cd "$wdir"
+		git checkout "$git_commit"
+		cd "$wrelpath"
 		cat <<-ENDVLOG > vanda_job.log
-			date \$(date)
-			isodate \$(date '+%Y-%m-%dT%h%m%s')
-			git_ref \$(git rev-parse --verify HEAD)
-			git_log \$(git log -1 --pretty=oneline)
-			vanda_relpath $wrelpath
-			vanda_linkdest $linkdest
-			vanda_version $vandaversion
+			date		\$(date)
+			isodate		\$(date '+%Y-%m-%dT%h%m%s')
+			git_ref		$git_commit
+			git_log		\$(git log -1 --pretty='%h %B')
+			vanda_relpath	$wrelpath
+			vanda_linkdest	$linkdest
+			vanda_version	$vandaversion
 		ENDVLOG
 		#tmux new-session -d bash -c './vanda_job.sh 1>vanda_job.o 2>vanda_job.e'
 		screen -dmS vanda_job_$wdir -- bash -c './vanda_job.sh \
 		  > >(tee -a vanda_job.o) 2> >(tee -a vanda_job.e >&2) ; \
-		  echo -e "date_end \$(date)\nisodate_end \$(date '+%Y-%m-%dT%h%m%s')" >>vanda_job.log'
+		  echo -e "date_end\t\$(date)\nisodate_end\t\$(date '+%Y-%m-%dT%h%m%s')" >>vanda_job.log'
 	ENDSSH
 
 	# link results here
@@ -147,7 +150,7 @@ cmd_info() {
 	fi
 
 	echo -e "\nJob log at $vjdir/vanda_job.log"
-	sed 's/^/  /g' "$vjdir/vanda_job.log"
+	cat "$vjdir/vanda_job.log"
 }
 
 cmd_clean() {
