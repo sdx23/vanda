@@ -168,6 +168,10 @@ cmd_remove() {
 	done
 }
 
+cmd_gitignore() {
+	echo -e "vj20*\n" >> .gitignore
+}
+
 #----------------------- main
 
 optspec=":hv:"
