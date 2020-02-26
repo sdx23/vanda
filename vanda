@@ -123,6 +123,16 @@ cmd_attach() {
 	ssh "$vhost" -t -- screen -rx "$vsession"
 }
 
+cmd_kill() {
+	jobdata_str=$(tail -n1 .vandajobs)
+	IFS=' ' read -r -a jobdata <<< "$jobdata_str"
+	vhost=${jobdata[3]}
+	vsession=${jobdata[2]}
+
+	# shellcheck disable=SC2029
+	ssh "$vhost" -t -- screen -X -S "$vsession" quit
+}
+
 cmd_clean() {
 	for dirlink in vj20*; do
 		if [ -L "$dirlink" ] && ! [ -e "$dirlink" ]; then
