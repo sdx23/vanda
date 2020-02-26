@@ -6,7 +6,7 @@ rc_file="$HOME/.vandarc"
 
 # set here
 vjobdir="vanda"
-vandaversion="0.04"
+vandaversion="0.05"
 
 # options
 verbose=0
@@ -133,6 +133,23 @@ cmd_kill() {
 	ssh "$vhost" -t -- screen -X -S "$vsession" quit
 }
 
+cmd_info() {
+	jobdata_str=$(tail -n1 .vandajobs)
+	IFS=' ' read -r -a jobdata <<< "$jobdata_str"
+	vhost=${jobdata[3]}
+	vsession=${jobdata[2]}
+	vjdir="vj${vsession#vanda_job_*_}"
+
+	if ssh "$vhost" -- screen -list | grep -q "$vsession" ; then
+		echo "Job $vsession still running."
+	else
+		echo "Job $vsession has terminated."
+	fi
+
+	echo -e "\nJob log at $vjdir/vanda_job.log"
+	sed 's/^/  /g' "$vjdir/vanda_job.log"
+}
+
 cmd_clean() {
 	for dirlink in vj20*; do
 		if [ -L "$dirlink" ] && ! [ -e "$dirlink" ]; then
@@ -152,7 +169,9 @@ cmd_help() {
 
 	commands:
 	  run             run vanda for the current git commit
-      attach          attach to recent job session
+      attach          attach to most recent job session
+      kill            kill the most recent job session
+      info            print information on the most recent session
 	  clean           remove stale resource links
 	  remove          remove the given resource and its link
 	  gitignore       append vanda specifics to .gitignore
