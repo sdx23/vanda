@@ -153,8 +153,12 @@ cmd_info() {
 		echo "Job $vsession has terminated."
 	fi
 
-	echo -e "\nJob log at $vjdir/vanda_job.log"
-	cat "$vjdir/vanda_job.log"
+	if [ -f "$vjdir/vanda_job.log" ]; then
+		echo -e "\nJob log at $vjdir/vanda_job.log"
+		cat "$vjdir/vanda_job.log"
+	else
+		echo -e "\nJob log at $vjdir/vanda_job.log not found."
+	fi
 }
 
 cmd_clean() {
