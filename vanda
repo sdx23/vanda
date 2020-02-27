@@ -104,10 +104,12 @@ cmd_run() {
 		fi
 		cd "$vjobdir"
 		git clone "$git_remote" "$wdir"
-		ln -s "${wrelpath#/}" "${wdir}/vanda_pwd"
+		if [ -n "${wrelpath#/}" ]; then
+			ln -s "${wrelpath#/}" "${wdir}/vanda_pwd"
+		fi
 		cd "$wdir"
 		git checkout "$git_commit"
-		cd "$wrelpath"
+		cd "${wrelpath#/}"
 		cat <<-ENDVLOG > vanda_job.log
 			date		\$(date)
 			isodate		\$(date '+%Y-%m-%dT%h%m%s')
