@@ -52,6 +52,20 @@ error() {
 	echo "$1"
 }
 
+get_jobinfo() {
+	if [ ! -f	.vandajobs ]; then
+		error "No vanda job info found."
+		exit 1
+	fi
+
+	jobdata_str=$(tail -n1 .vandajobs)
+	IFS=' ' read -r -a jobdata <<< "$jobdata_str"
+	vhost=${jobdata[3]}
+	vsession=${jobdata[2]}
+	vjdir="vj${vsession#vanda_job_*_}"
+}
+
+
 #----------------------- commands
 
 cmd_run() {
@@ -117,31 +131,21 @@ cmd_run() {
 }
 
 cmd_attach() {
-	jobdata_str=$(tail -n1 .vandajobs)
-	IFS=' ' read -r -a jobdata <<< "$jobdata_str"
-	vhost=${jobdata[3]}
-	vsession=${jobdata[2]}
+	get_jobinfo
 
 	# shellcheck disable=SC2029
 	ssh "$vhost" -t -- screen -rx "$vsession"
 }
 
 cmd_kill() {
-	jobdata_str=$(tail -n1 .vandajobs)
-	IFS=' ' read -r -a jobdata <<< "$jobdata_str"
-	vhost=${jobdata[3]}
-	vsession=${jobdata[2]}
+	get_jobinfo
 
 	# shellcheck disable=SC2029
 	ssh "$vhost" -t -- screen -X -S "$vsession" quit
 }
 
 cmd_info() {
-	jobdata_str=$(tail -n1 .vandajobs)
-	IFS=' ' read -r -a jobdata <<< "$jobdata_str"
-	vhost=${jobdata[3]}
-	vsession=${jobdata[2]}
-	vjdir="vj${vsession#vanda_job_*_}"
+	get_jobinfo
 
 	if ssh "$vhost" -- screen -list | grep -q "$vsession" ; then
 		echo "Job $vsession still running."
