@@ -183,8 +183,8 @@ cmd_help() {
 	commands:
 	  run             run vanda for the current git commit
 	  attach          attach to most recent job session
-	  kill            kill the most recent job session
-	  info            print information on the most recent session
+	  kill            kill most recent job
+	  info            print information on the most recent job
 	  clean           remove stale resource links
 	  remove          remove the given resource and its link
 	  gitignore       append vanda specifics to .gitignore
